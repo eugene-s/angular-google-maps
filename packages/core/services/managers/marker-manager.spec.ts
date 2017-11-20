@@ -3,7 +3,7 @@ import {TestBed, async, inject} from '@angular/core/testing';
 
 import {AgmMarker} from './../../directives/marker';
 import {GoogleMapsAPIWrapper} from './../google-maps-api-wrapper';
-import {Marker} from './../google-maps-types';
+import {Marker, Icon} from './../google-maps-types';
 import {MarkerManager} from './../managers/marker-manager';
 
 describe('MarkerManager', () => {
@@ -63,7 +63,7 @@ describe('MarkerManager', () => {
            }));
   });
 
-  describe('set marker icon', () => {
+  describe('set url marker icon', () => {
     it('should update that marker via setIcon method when the markerUrl changes',
        async(inject(
            [MarkerManager, GoogleMapsAPIWrapper],
@@ -88,11 +88,50 @@ describe('MarkerManager', () => {
                title: undefined,
                clickable: true
              });
-             const iconUrl = 'http://angular-maps.com/icon.png';
-             newMarker.iconUrl = iconUrl;
+             const icon = 'http://angular-maps.com/icon.png';
+             newMarker.icon = icon;
              return markerManager.updateIcon(newMarker).then(
-                 () => { expect(markerInstance.setIcon).toHaveBeenCalledWith(iconUrl); });
+                 () => { expect(markerInstance.setIcon).toHaveBeenCalledWith(icon); });
            })));
+  });
+
+  describe('set complex marker icon', () => {
+    it('should update that marker via setIcon method when the markerUrl changes',
+      async(inject(
+        [MarkerManager, GoogleMapsAPIWrapper],
+        (markerManager: MarkerManager, apiWrapper: GoogleMapsAPIWrapper) => {
+          const newMarker = new AgmMarker(markerManager);
+          newMarker.latitude = 34.4;
+          newMarker.longitude = 22.3;
+          newMarker.label = 'A';
+
+          const markerInstance: Marker = jasmine.createSpyObj('Marker', ['setMap', 'setIcon']);
+          (<any>apiWrapper.createMarker).and.returnValue(Promise.resolve(markerInstance));
+
+          markerManager.addMarker(newMarker);
+          expect(apiWrapper.createMarker).toHaveBeenCalledWith({
+            position: {lat: 34.4, lng: 22.3},
+            label: 'A',
+            draggable: false,
+            icon: undefined,
+            opacity: 1,
+            visible: true,
+            zIndex: 1,
+            title: undefined,
+            clickable: true
+          });
+          const icon: Icon = <Icon>{
+            anchor: {x: 16, y: 16},
+            labelOrigin: {x: 0, y: 0},
+            origin: {x: 0, y: 0},
+            scaledSize: {height: 32, width: 32},
+            size: {height: 32, width: 32},
+            url: 'http://angular-maps.com/icon.png'
+          };
+          newMarker.icon = icon;
+          return markerManager.updateIcon(newMarker).then(
+            () => { expect(markerInstance.setIcon).toHaveBeenCalledWith(icon); });
+        })));
   });
 
   describe('set marker opacity', () => {

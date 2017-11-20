@@ -3,7 +3,7 @@ import {TestBed, async, inject} from '@angular/core/testing';
 
 import {AgmMarker} from '../../../core/directives/marker';
 import {GoogleMapsAPIWrapper} from '../../../core/services/google-maps-api-wrapper';
-import {Marker} from '../../../core/services/google-maps-types';
+import {Marker, Icon} from '../../../core/services/google-maps-types';
 import {ClusterManager} from './cluster-manager';
 
 describe('ClusterManager', () => {
@@ -88,11 +88,50 @@ describe('ClusterManager', () => {
                title: undefined,
                clickable: true
              }, false);
-             const iconUrl = 'http://angular-maps.com/icon.png';
-             newMarker.iconUrl = iconUrl;
+             const icon = 'http://angular-maps.com/icon.png';
+             newMarker.icon = icon;
              return markerManager.updateIcon(newMarker).then(
-                 () => { expect(markerInstance.setIcon).toHaveBeenCalledWith(iconUrl); });
+                 () => { expect(markerInstance.setIcon).toHaveBeenCalledWith(icon); });
            })));
+  });
+
+  describe('set complex marker icon', () => {
+    it('should update that marker via setIcon method when the markerUrl changes',
+      async(inject(
+        [ClusterManager, GoogleMapsAPIWrapper],
+        (markerManager: ClusterManager, apiWrapper: GoogleMapsAPIWrapper) => {
+          const newMarker = new AgmMarker(markerManager);
+          newMarker.latitude = 34.4;
+          newMarker.longitude = 22.3;
+          newMarker.label = 'A';
+
+          const markerInstance: Marker = jasmine.createSpyObj('Marker', ['setMap', 'setIcon']);
+          (<any>apiWrapper.createMarker).and.returnValue(Promise.resolve(markerInstance));
+
+          markerManager.addMarker(newMarker);
+          expect(apiWrapper.createMarker).toHaveBeenCalledWith({
+            position: {lat: 34.4, lng: 22.3},
+            label: 'A',
+            draggable: false,
+            icon: undefined,
+            opacity: 1,
+            visible: true,
+            zIndex: 1,
+            title: undefined,
+            clickable: true
+          }, false);
+          const icon: Icon = <Icon>{
+            anchor: {x: 16, y: 16},
+            labelOrigin: {x: 0, y: 0},
+            origin: {x: 0, y: 0},
+            scaledSize: {height: 32, width: 32},
+            size: {height: 32, width: 32},
+            url: 'http://angular-maps.com/icon.png'
+          };
+          newMarker.icon = icon;
+          return markerManager.updateIcon(newMarker).then(
+            () => { expect(markerInstance.setIcon).toHaveBeenCalledWith(icon); });
+        })));
   });
 
   describe('set marker opacity', () => {
